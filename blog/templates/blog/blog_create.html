@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Blog</title>
+    <style>
+        /* Body and page layout */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4; /* Light grey background for the page */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh; /* Full height of the viewport */
+            justify-content: flex-start; /* Align items to the top */
+        }
+
+        h1 {
+            text-align: center;
+            color: #333; /* Dark text color for the header */
+            margin-top: 50px; /* Space from the top, adjust as needed */
+        }
+
+        /* Form styling */
+        form {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px; /* Rounded corners for the form */
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for the form */
+            width: 100%;
+            max-width: 500px; /* Max width for the form */
+            margin: 20px 0; /* Margin to space the form from the top and bottom */
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+            color: #555; /* Slightly lighter text for labels */
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px; /* Space between inputs */
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            color: #333;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #4CAF50; /* Green border when focused */
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50; /* Green button */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049; /* Darker green on hover */
+        }
+
+        /* Link styling */
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #4CAF50; /* Green link color */
+            font-size: 16px;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Optional: For responsive design */
+        @media (max-width: 600px) {
+            form {
+                width: 90%; /* Form will take 90% of the screen width on smaller screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Create Blog</h1>
+    <form method="post">
+        {% csrf_token %}
+        <label for="title">Title:</label>
+        <input type="text" name="title" required><br>
+        <label for="content">Content:</label>
+        <textarea name="content" required></textarea><br>
+        <button type="submit">Create Blog</button>
+    </form>
+    <a href="{% url 'blog_list' %}">Back to List</a>
+</body>
+</html>
