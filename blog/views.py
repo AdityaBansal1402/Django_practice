@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.hashers import make_password, check_password
 from django.http import JsonResponse
+from django.core.paginator import Paginator
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -14,6 +15,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from allauth.socialaccount.models import SocialToken, SocialAccount
 from django.contrib.auth import logout
+from blog.tasks import mail_send
 
 def request_count_view(request):
     return JsonResponse(url_request_count)
@@ -30,6 +32,7 @@ def register(request):
 
         password_hash = make_password(password)
         user = User.objects.create(email=email, username=username, password=password_hash)
+        cache.delete('blog_user_list_cache')
 
         return redirect('/blog/login')
 
@@ -88,28 +91,27 @@ def login(request):
             return render(request, 'login.html', {"error": "OAuth login failed. No token found."})
 
     
-    print("this is my deathbed")
+    # print("this is my deathbed")
     return render(request, 'login.html')
 
 
 @api_view(['GET'])
 def blog_list(request): 
-    try:        
-        # jwt_auth = JWTAuthentication()
-        # validated_token = jwt_auth.get_validated_token(token)
+    try:
         blogs = cache.get('blog_list')
 
         if not blogs:
             blogs = Blog.objects.all()
-            # Cache the result for 5 minutes
             cache.set('blog_list', blogs, timeout=60*5)
-        # else:
-        #     print("blogs")
-        return render(request, 'blog/blog_list.html', {'blogs': blogs})
+
+        paginator = Paginator(blogs, 10)  
+        page_number = request.GET.get('page') 
+        page_obj = paginator.get_page(page_number)
+
+        return render(request, 'blog/blog_list.html', {'page_obj': page_obj})
 
     except AuthenticationFailed:
         return redirect('/blog/login', {"error": "Authentication failed. Please log in again."})
-
 def blog_user_list():
     """
     Fetches the list of all users and blogs related to the logged-in user.
@@ -122,11 +124,15 @@ def blog_user_list():
 
         user_blogs = Blog.objects.filter(user_id=user.id)
 
-        return {
+        result = {
             'all_users': users,
             'user_blogs': user_blogs,
             'user': user
         }
+
+        cache.set('blog_user_list_cache', result, timeout=300)
+
+        return result
 
     except AuthenticationFailed:
         return None
@@ -151,13 +157,16 @@ def blog_create(request):
 
         except AuthenticationFailed:
             return render(request, 'login.html', {"error": "Authentication failed. Please log in again."})
-    
+        
+
 
 @api_view(['GET'])
 # @permission_classes([IsAuthenticated])
 def blog_detail(request, pk):
         try:
-            context = blog_user_list()
+            context=cache.get('blog_user_list_cache')
+            if not context:
+                context = blog_user_list()
             if not context:
                 return redirect('/blog/login', {"error": "Authentication failed. Please log in again."})
             
@@ -181,13 +190,7 @@ def blog_detail(request, pk):
                 )
 
                 if blog.views % 1 == 0:
-                    send_mail(
-                        subject='Your blog reached a milestone!',
-                        message=f'Your blog "{blog.title}" has reached {blog.views} views!',
-                        from_email='adityabansal3009@gmail.com',
-                        recipient_list=[blog.user.email],
-                        fail_silently=False,
-                    )
+                    mail_send.delay(blog.title,blog.views,blog.user.email)
 
             context['blog'] = blog
             # print(blog.users_who_liked.all)
@@ -244,6 +247,7 @@ def logout_view(request):
     logout(request)
     cache.delete('blog_list')
     cache.delete('user')
+    cache.delete('blog_user_list_cache')
     # cache.delete('is_authenticated')
     # response.delete_cookie('is_authenticated')
     return response
@@ -263,6 +267,7 @@ def blog_perm(request, pk, us_id, action):
                     blog.users_access.add(target_user)
                 elif action == 'revoke':
                     blog.users_access.remove(target_user)
+                cache.delete('blog_user_list_cache')
             return redirect('blog_detail', pk=pk)
 
         except AuthenticationFailed:

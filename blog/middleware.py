@@ -20,6 +20,7 @@ class JWTAuthenticationMiddleware:
 
             if token:
                 try:
+                    # print(token)
                     cache.set('access_token',token,timeout=60*5)
                     jwt_auth = JWTAuthentication()
                     validated_token = jwt_auth.get_validated_token(token)

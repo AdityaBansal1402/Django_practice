@@ -4,9 +4,9 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from channels.security.websocket import AllowedHostsOriginValidator
 from django.urls import path
-from blog.consumers import BlogConsumer  # adjust import path based on your app name
+from blog.consumers import BlogConsumer 
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')  # change to your project name
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),

@@ -1,5 +1,9 @@
-from django.urls import path,include
+from django.urls import path,include,re_path
 from . import views
+from django.shortcuts import redirect
+
+def catch_all(request):
+    return redirect('blog/')  
 
 urlpatterns = [
     path('accounts/',include('allauth.urls')),
@@ -13,7 +17,8 @@ urlpatterns = [
     path('blogs/<int:pk>/delete/', views.blog_delete, name='blog_delete'),
     path('blogs/<int:pk>/like/', views.blog_like, name='blog_like'),
     path('blogs/<int:pk>/loading/', views.blog_loading, name='blog_loading'),
-    path('blog/<int:pk>/perm/<int:us_id>/<str:action>/', views.blog_perm, name='blog_perm'),
+    path('blogs/<int:pk>/perm/<int:us_id>/<str:action>/', views.blog_perm, name='blog_perm'),
     path('blogs/user/', views.blog_user_list, name='blog_user_list'),
     path('request-counts/',views.request_count_view,name='request_count_view'),
+    # re_path(r'^.*$', catch_all),
 ]
